@@ -1,0 +1,328 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+
+struct Node{                     //generic structure for a generic graph
+           Node *came_from;
+           float f_score,g_score,h_score;    //f_score=g_score+h_score(used to select the node to add the closed_set,to minimum value from open_set is chosen)
+                                             //g_score(the weight of the path up until the node)
+                                             //h_score(value of the heuristic function taken from the array below market by a(*))
+           int n;                            //name of the node node(1,2,3....n)
+}*current_node;
+
+struct Generic_set{                          //generic structure for the two sets
+           Node* element;                    //node of the graph
+           Generic_set* next;                 //next element in the set
+}*open_set,*closed_set;                      //the two sets
+                                             //open_set ->all the nodes adjacent with teh nodes in the closed set
+                                             //closed_set -> all nodes visited which may belong to the minimum path
+float Matrix_adj[200][200];                  //adjacency matrix for the given graph(contains the length of all the edges in a graph (0 means it doesn't exist)
+float Heuristic_vector[200];                 //the vector representing the heuristic value of each node in the graph(*)
+int n,start,dest;                            //number of nodes,start and destination nodes
+
+
+Node* det_min(){                               //function used to determine the minimum f_score node in the open set
+          struct Node* min;
+          struct Generic_set* set=open_set;
+          if(set!=NULL)
+          {
+                   min=set->element;           //min takes the value of the first element
+                   while(set!=NULL)
+                    {
+                             if(min->f_score>set->element->f_score)     //if f_score(min)>f_score(element_from_open_set) min =element_from_open_set
+
+                                      min=set->element;
+                               set=set->next;                    //the next element in the open_set
+                    }
+            }
+             return  min;                                  //we return the minimum f_score node which is min
+}
+
+bool notInClosedSet(int i){                                //function used to check if a node is in the closed_set(as to not add iy to de open set again)
+            struct Generic_set* set=closed_set;
+            while(set!=NULL)
+            {
+                   if(set->element->n==i)
+                            return false;                  //returns false if found
+                   set=set->next;
+             }
+             return true;                                   //return true if not found
+}
+
+
+
+
+
+bool notInOpenSet(int i){ //function used to check if a node is in the
+//open_set(as to not add it to open_set again),
+struct Generic_set*set=open_set; //we use updateOpenSet() to update the f_scores of the nodes in the open_set if they are lower on the current path
+
+while(set!=NULL){
+    if(set->element->n=i)return false; //returns false if found
+    set-set->next;
+}
+    return true; //returns true if not found
+
+}
+
+void addToOpenSet(int i){ //function used to add to the open_set all the nodes
+//adjcent with the current_node
+  struct Generic_set*set=open_set;
+  struct Generic_set*tmp;
+     if(open_set!=NULL) //we verify if the open_set is empty
+        while(set->next!=NULL){set=set->next;}//if node we set a pointer to the last element(not NULL) in the open_set
+   for(int j=1;j<=n;j++) //we test all the nodes in the graph
+   if(Matrix_adj[i][j] && notInClosedSet(j) && notInOpenSet(j)){
+//test if edge exists, element is not already in the open_set or closed_set
+
+    if(open_set){ //test if the open set is empty
+ tmp=new struct Generic_set;
+//create a new element of type Generic_set
+tmp->element=new struct Node;
+tmp->element->n-j;
+//we set the name of the node
+tmp->element->g_score=Matrix_adj[i][j]+current_node->g_score; //calculate the g_score(weight of edge from current_node to the node checked+weight of path so far)
+tmp->element->h_score=Heuristic_vector[j]; //set the heuristic value from the array
+tmp->element->f_score=tmp->element->g_score+tmp->element->h_score; //calculate the f_score
+tmp->element->came_from=current_node; //we set the node from which we discovered the node being checked
+tmp->next=NULL;
+set->next=tmp;
+//we add the newly create Generic_set element in the open_set
+set=set->next; }
+//we set the pointer in the last element in open_set
+else{
+//same as above only this time the open _set is empty we work with that point
+open_set=new struct Generic_set;
+open_set->element=new struct Node;
+open_set->element->n=j;
+open_set->element->g_score=Matrix_adj[i][j]+current_node->g_score;
+open_set->element->h_score=Heuristic_vector[j];
+open_set->element->f_score=open_set->element->g_score+open_set->element->h_score;
+open_set->element->came_from=current_node;
+open_set->next=NULL;
+set=open_set;
+}
+}
+}
+
+void deleteFromOpenSet(struct Node* nod){ //function used to delete a node from the open_set after we add it to the cosed_set
+struct Generic_set* set=open_set;
+struct Generic_set* tmp;
+
+if (set->element->n==nod->n){ //check to see if it the first element in the open_set
+
+tmp=set;
+set=set->next;
+open_set=set;
+tmp->next=NULL;
+delete tmp;
+}
+
+else while(set->next!=NULL && set->next->element->n!=nod->n){set-set->next;}
+//if now we position a pointer to the element preceding it
+
+if(set->next){//if the element is found we delete it(set->next is the element, it is NULL if not found)
+tmp=set->next;
+set->next=set->next->next;
+tmp->next=NULL;
+delete tmp;
+}
+}
+
+void updateOpenSet(){//function used to update the f_scor and g_score of the nodes in open_set and also the preceding node in the path(if update occurs)
+struct Generic_set* set=open_set;
+
+while(set!=NULL){
+		if (set->element->n == current_node->n && set->element->g_score>current_node->g_score + Matrix_adj[set->element->n][current_node->n]) {
+	//if we find an element with a larger g_score
+			set->element->came_from = current_node;
+	//we update it
+			set->element->g_score = current_node->g_score + Matrix_adj[set->element->n][current_node->n];
+			set->element->f_score = set->element->g_score + set->element->h_score;
+		}
+		set = set->next;
+	}
+}
+
+void addToClosedSet(struct Node* nod) { //function used to add a node to the closed_set (similar to addToOpenSet(numecod) only this time we don't check the nodes, we simply hand a node)
+	struct Generic_set* set = closed_set;
+
+	if (closed_set){
+		while (set->next != NULL) { set = set->next; }
+		set->next = new struct Generic_set;
+		set->next->element = nod;
+		set->next->next = NULL;
+	}
+	else{
+		closed_set = new struct Generic_set;
+		closed_set->element = nod;
+		closed_set->next = NULL;
+	}
+}
+
+void printPath(struct Node* path) {//function used to print the path (it uses recursive calls as to not print it backwards)
+	if (path->came_from){//if the node has a parent we call the function for it's parent
+		printPath(path->came_from);
+	}
+	printf("%d", path->n); //we print the node
+}
+
+void printSets(){
+	struct Generic_set* set = closed_set;
+	printf("The closed_set contains the following node(s):\n");
+	while (set){
+		printf("Node %d: fscore=%2f g_score=%2f h_score=%2f\n, set->element->n,set->element->f_score,set->element->g_score, set->element->h_score");
+		set = set->next;
+	}
+	printf("\n\n The open_set contains the following node(s):\n");
+	set = open_set;
+	while (set){
+		printf("Node %d: fscore=%2f g_score=%2f h_score=%2f\n, set->element->n,set->element->f_score,set->element->g_score, set->element->h_score");
+		set = set->next;
+	}
+	printf("\n");
+}
+
+void AStar(int start, int dest){ //The A*(A Star) function which calls all the above function to compute a minimum path lenght
+	current_node = new struct Node;//we set the current_node in the start node
+	current_node->h_score = Heuristic_vector[start];
+	current_node->f_score = current_node->h_score;
+	current_node->g_score = 0;
+	current_node->came_from = NULL;
+	current_node->n = start;
+
+	addToClosedSet(current_node); //we add it to the closed_set
+	addToOpenSet(start); //we add to the open_set the nodes adjacent to the current node
+
+printf("initial values of sets:");
+printSets(); //we print the nodes in closed_set and open_set
+getch();
+
+while (open_set){ //if the open_set is not empty
+	current_node = det_min(); //find the mininum f_score node in the open_set and set it as the current node
+
+	printf("Node with lowest f_score in open_set is node %d: f_score=%2f \n\n\n", current_node->n, current_node->f_score);
+	getch();
+
+	addToClosedSet(current_node); //add it to the closed_set
+	updateOpenSet();              //update the nodes in the open_set
+	deleteFromOpenSet(current_node);// we delete the current node from the open_set
+	addToOpenSet(current_node->n); //we add to the open set all the nodes adjacent to the current_node
+
+	printf("The sets after we add node %d to the closed_set(delete it fron the open_set also) and we add the adjacent nodes to the open_set \n\n", current_node->n);
+	printSets();
+	getch();
+
+	if (current_node->n == dest) {//if the current node is the destination we print the weight of the path and the pat itself
+		printf("The minimum path has been found. It's lenght is %2f\n\n", current_node->g_score);
+		printf("The path consists from the following nodes \n");
+
+
+
+
+
+
+              printPath(current_node);
+              printf("\n\n");
+              return;
+            }
+      }
+      printf("Path does not exist\n");
+}
+
+void deleteSets()       //function used to delete the two sets after A*(A-Star) completion
+
+{
+
+struct Generic_set*set=open_set;
+
+         while(open_set)
+       {
+               open_set=open_set->next;
+               set->next=NULL;
+               delete set;
+               set=closed_set;
+       }
+
+  set=closed_set;
+
+       while(closed_set)
+       {
+           closed_set=closed_set->next;
+           set->next=NULL;
+           delete set;
+           set=closed_set;
+       }
+
+}
+
+
+
+int main()
+
+{
+   int m,x,y;
+   float c;
+
+ FILE *f;
+ f=fopen("date.txt","r");
+
+ open_set=NULL;
+ closed_set=NULL;
+
+ //printf("Number of nodes:");
+
+ fscanf(f,"%d",&n);
+
+ //initializa the adjacency matrix to 0 (no edges)
+
+ for(int i=1;i<=n;i++)
+         for(int j=1;j<=n;j++)
+             Matrix_adj[i][j]=0;
+
+//read the number of edges in graph as well as their respective weights
+//printf("Number of edges:");
+
+fscanf(f,"%d",&m);
+
+//printf ("Input edges and their corresponding weights:\n");
+
+for(int i=1;i<=m;i++)
+  {
+        fscanf(f,"%d%d%f",&x,&y,&c);
+        Matrix_adj[x][y]=c;
+        Matrix_adj[y][x]=c;
+
+  }
+
+//read the heuristic value for each node in the graph
+
+for(int i=1;i<=n;i++)
+
+   {
+//printf ("h_value(%d)=",i);
+        fscanf(f,"%f",&Heuristic_vector[i]);
+
+   }
+
+//read the start and end node
+//printf("Start node:");
+
+fscanf(f,"%d",&start);
+
+//printf("Destination node:");
+
+fscanf(f,"%d",&dest);
+
+deleteSets();
+AStar(start,dest);
+getche();
+
+}
+
+
+
+
+
+
+
